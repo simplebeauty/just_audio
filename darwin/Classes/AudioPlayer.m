@@ -6,6 +6,7 @@
 #import "LoopingAudioSource.h"
 #import "ClippingAudioSource.h"
 #import <AVFoundation/AVFoundation.h>
+#import <MediaPlayer/MediaPlayer.h>
 #import <stdlib.h>
 #include <TargetConditionals.h>
 
@@ -30,6 +31,7 @@
     int _updatePosition;
     int _lastPosition;
     int _bufferedPosition;
+    NSMutableDictionary *_id3Metadata;
     // Set when the current item hasn't been played yet so we aren't sure whether sufficient audio has been buffered.
     BOOL _bufferUnconfirmed;
     CMTime _seekPos;
@@ -320,10 +322,10 @@
             @"processingState": @(_processingState),
             @"updatePosition": @(_updatePosition),
             @"updateTime": @(_updateTime),
-            // TODO: buffer position
-            @"bufferedPosition": @(_updatePosition),
+            @"bufferedPosition": @(_bufferedPosition),
             // TODO: Icy Metadata
             @"icyMetadata": [NSNull null],
+            @"id3Metadata": _id3Metadata != nil ? _id3Metadata : [NSNull null],
             @"duration": @([self getDuration]),
             @"currentIndex": @(_index),
     });
@@ -674,6 +676,48 @@
     }
 }
 
+- (void)buildId3Metadata:(AVPlayerItem *)playingItem {
+    if (playingItem != nil && playingItem.asset.commonMetadata.count > 0) {
+        NSArray *commonMetadata = playingItem.asset.commonMetadata;
+        NSMutableDictionary *id3Metadata = [[NSMutableDictionary alloc] init];
+        for (AVMetadataItem *metaItem in commonMetadata) {
+           NSLog(@"key: %@, value: %@", metaItem.commonKey, metaItem.value);
+            if ([metaItem.commonKey isEqualToString:MPMediaItemPropertyArtwork]) {
+                NSData *picData = nil;
+                if ([metaItem.value isKindOfClass:[NSData class]]) {
+                    picData = (NSData *)metaItem.value;
+                } else if ([metaItem.value isKindOfClass:[NSDictionary class]]) {
+                    NSDictionary *dict = (NSDictionary *)metaItem.value;
+                    if (dict[@"MIME"] != nil && [(NSString *)dict[@"MIME"] hasPrefix:@"image"]) {
+                        picData = (NSData *)dict[@"data"];
+                        if ([picData isKindOfClass:[NSData class]]) {
+                            picData = nil;
+                        } else {
+                            id3Metadata[@"mimeType"] = dict[@"MIME"];
+                        }
+                    }
+                }
+                if (picData != nil) {
+                    id3Metadata[@"pictureData"] = picData;
+                }
+            } else if ([metaItem.commonKey isEqualToString:MPMediaItemPropertyTitle]) {
+                id3Metadata[@"title"] = metaItem.value;
+            } else if ([metaItem.commonKey isEqualToString:MPMediaItemPropertyArtist]) {
+                id3Metadata[@"artist"] = metaItem.value;
+            } else if ([metaItem.commonKey isEqualToString:MPMediaItemPropertyAlbumArtist]) {
+                id3Metadata[@"albumArtist"] = metaItem.value;
+            } else if ([metaItem.commonKey isEqualToString:MPMediaItemPropertyAlbumTitle]) {
+                id3Metadata[@"album"] = metaItem.value;
+            } else if ([metaItem.commonKey isEqualToString:@"albumName"]) {
+                if (id3Metadata[@"album"] == nil) {
+                    id3Metadata[@"album"] = metaItem.value;
+                }
+            }
+        }
+        _id3Metadata = id3Metadata;
+    }
+}
+
 - (void)observeValueForKeyPath:(NSString *)keyPath
                       ofObject:(id)object
                         change:(NSDictionary<NSString *,id> *)change
@@ -722,6 +766,7 @@
                     }
                     [self updatePosition];
                 }
+                [self buildId3Metadata:_player.currentItem];
                 [self broadcastPlaybackEvent];
                 if (_loadResult) {
                     _loadResult(@([self getDuration]));
@@ -1024,6 +1069,7 @@
         index = [newIndex intValue];
     }
     if (index != _index) {
+        _id3Metadata = nil;
         // Jump to a new item
         /* if (_playing && index == _index + 1) { */
         /*     // Special case for jumping to the very next item */

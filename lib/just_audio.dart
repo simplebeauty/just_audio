@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
@@ -111,6 +112,9 @@ class AudioPlayer {
           icyMetadata: data['icyMetadata'] == null
               ? null
               : IcyMetadata.fromJson(data['icyMetadata']),
+          id3Metadata: data['id3Metadata'] == null
+              ? null
+              : Id3Metadata.fromJson(data['id3Metadata']),
           currentIndex: data['currentIndex'],
           androidAudioSessionId: data['androidAudioSessionId'],
         );
@@ -125,23 +129,33 @@ class AudioPlayer {
     _processingStateSubject.addStream(playbackEventStream
         .map((event) => event.processingState)
         .distinct()
-        .handleError((err, stack) {/* noop */}));
+        .handleError((err, stack) {
+      /* noop */
+    }));
     _bufferedPositionSubject.addStream(playbackEventStream
         .map((event) => event.bufferedPosition)
         .distinct()
-        .handleError((err, stack) {/* noop */}));
+        .handleError((err, stack) {
+      /* noop */
+    }));
     _icyMetadataSubject.addStream(playbackEventStream
         .map((event) => event.icyMetadata)
         .distinct()
-        .handleError((err, stack) {/* noop */}));
+        .handleError((err, stack) {
+      /* noop */
+    }));
     _currentIndexSubject.addStream(playbackEventStream
         .map((event) => event.currentIndex)
         .distinct()
-        .handleError((err, stack) {/* noop */}));
+        .handleError((err, stack) {
+      /* noop */
+    }));
     _androidAudioSessionIdSubject.addStream(playbackEventStream
         .map((event) => event.androidAudioSessionId)
         .distinct()
-        .handleError((err, stack) {/* noop */}));
+        .handleError((err, stack) {
+      /* noop */
+    }));
     _sequenceStateSubject.addStream(
         Rx.combineLatest2<List<IndexedAudioSource>, int, SequenceState>(
       sequenceStream,
@@ -152,14 +166,18 @@ class AudioPlayer {
         currentIndex = min(sequence.length - 1, max(0, currentIndex));
         return SequenceState(sequence, currentIndex);
       },
-    ).distinct().handleError((err, stack) {/* noop */}));
+    ).distinct().handleError((err, stack) {
+      /* noop */
+    }));
     _playerStateSubject.addStream(
         Rx.combineLatest2<bool, PlaybackEvent, PlayerState>(
                 playingStream,
                 playbackEventStream,
                 (playing, event) => PlayerState(playing, event.processingState))
             .distinct()
-            .handleError((err, stack) {/* noop */}));
+            .handleError((err, stack) {
+      /* noop */
+    }));
     _eventChannelStreamSubscription = _eventChannelStream.listen(
       _playbackEventSubject.add,
       onError: _playbackEventSubject.addError,
@@ -735,6 +753,9 @@ class PlaybackEvent {
   /// The latest ICY metadata received through the audio stream.
   final IcyMetadata icyMetadata;
 
+  /// The latest id3 metadata received through the audio stream.
+  final Id3Metadata id3Metadata;
+
   /// The index of the currently playing item.
   final int currentIndex;
 
@@ -748,6 +769,7 @@ class PlaybackEvent {
     @required this.bufferedPosition,
     @required this.duration,
     @required this.icyMetadata,
+    @required this.id3Metadata,
     @required this.currentIndex,
     @required this.androidAudioSessionId,
   });
@@ -760,6 +782,7 @@ class PlaybackEvent {
     double speed,
     Duration duration,
     IcyMetadata icyMetadata,
+    Id3Metadata id3Metadata,
     UriAudioSource currentIndex,
     int androidAudioSessionId,
   }) =>
@@ -770,6 +793,7 @@ class PlaybackEvent {
         bufferedPosition: bufferedPosition ?? this.bufferedPosition,
         duration: duration ?? this.duration,
         icyMetadata: icyMetadata ?? this.icyMetadata,
+        id3Metadata: id3Metadata ?? this.id3Metadata,
         currentIndex: currentIndex ?? this.currentIndex,
         androidAudioSessionId:
             androidAudioSessionId ?? this.androidAudioSessionId,
@@ -903,6 +927,48 @@ class IcyMetadata {
   @override
   bool operator ==(dynamic other) =>
       other is IcyMetadata && other?.info == info && other?.headers == headers;
+}
+
+class Id3Metadata {
+  final String title;
+  final String album;
+  final String artist;
+  final String albumArtist;
+  final String genre;
+  final String mimeType;
+  final Uint8List pictureData;
+
+  Id3Metadata({
+    @required this.title,
+    @required this.album,
+    @required this.artist,
+    @required this.albumArtist,
+    @required this.genre,
+    @required this.mimeType,
+    @required this.pictureData,
+  });
+
+  Id3Metadata.fromJson(Map json)
+      : this(
+          title: json['title'],
+          album: json['album'],
+          artist: json['artist'],
+          albumArtist: json['albumArtist'],
+          genre: json['genre'],
+          mimeType: json['mimeType'],
+          pictureData: json['pictureData'],
+        );
+
+  @override
+  String toString() =>
+      'title=$title,album=$album,artist=$artist,albumArtist=$albumArtist,genre=$genre,mimeType=$mimeType,pictureData=$pictureData';
+
+  @override
+  int get hashCode => toString().hashCode;
+
+  @override
+  bool operator ==(dynamic other) =>
+      other is Id3Metadata && other?.toString() == toString();
 }
 
 /// Encapsulates the [sequence] and [currentIndex] state and ensures

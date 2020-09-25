@@ -15,6 +15,7 @@ import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
 import com.google.android.exoplayer2.metadata.icy.IcyHeaders;
 import com.google.android.exoplayer2.metadata.icy.IcyInfo;
+import com.google.android.exoplayer2.metadata.id3.*;
 import com.google.android.exoplayer2.source.ClippingMediaSource;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.LoopingMediaSource;
@@ -75,6 +76,8 @@ public class AudioPlayer implements MethodCallHandler, Player.EventListener, Aud
 	private Map<String, MediaSource> mediaSources = new HashMap<String, MediaSource>();
 	private IcyInfo icyInfo;
 	private IcyHeaders icyHeaders;
+	private Map<String, Object> id3Metadata;
+
 	private int errorCount;
 
 	private SimpleExoPlayer player;
@@ -161,23 +164,45 @@ public class AudioPlayer implements MethodCallHandler, Player.EventListener, Aud
 
 	@Override
 	public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+		id3Metadata = new HashMap<>();
 		for (int i = 0; i < trackGroups.length; i++) {
 			TrackGroup trackGroup = trackGroups.get(i);
-
 			for (int j = 0; j < trackGroup.length; j++) {
 				Metadata metadata = trackGroup.getFormat(j).metadata;
-
 				if (metadata != null) {
 					for (int k = 0; k < metadata.length(); k++) {
 						final Metadata.Entry entry = metadata.get(k);
 						if (entry instanceof IcyHeaders) {
 							icyHeaders = (IcyHeaders) entry;
-							broadcastPlaybackEvent();
 						}
+						if (entry instanceof TextInformationFrame) {
+							TextInformationFrame frame = (TextInformationFrame) entry;
+							switch (frame.id) {
+								case "TIT2":
+									id3Metadata.put("title", frame.value);
+									break;
+								case "TALB":
+									id3Metadata.put("album", frame.value);
+									break;
+								case "TPE1":
+									id3Metadata.put("artist", frame.value);
+									break;
+								case "TPE2":
+									id3Metadata.put("albumArtist", frame.value);
+									break;
+							}
+						}
+						if (entry instanceof ApicFrame) {
+							ApicFrame frame = (ApicFrame) entry;
+							id3Metadata.put("mimeType", frame.mimeType);
+							id3Metadata.put("pictureData", frame.pictureData);
+						}
+						Log.e(TAG, "onTracksChanged: " + entry.getClass().getName().toString() + " " + entry.toString());
 					}
 				}
 			}
 		}
+		broadcastPlaybackEvent();
 	}
 
 	@Override
@@ -569,6 +594,7 @@ public class AudioPlayer implements MethodCallHandler, Player.EventListener, Aud
 		event.put("updateTime", updateTime = System.currentTimeMillis());
 		event.put("bufferedPosition", Math.max(updatePosition, bufferedPosition));
 		event.put("icyMetadata", collectIcyMetadata());
+		event.put("id3Metadata", id3Metadata);
 		event.put("duration", duration = getDuration());
 		event.put("currentIndex", currentIndex);
 		event.put("androidAudioSessionId", audioSessionId);
