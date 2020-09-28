@@ -627,6 +627,7 @@
 
 - (void)onComplete:(NSNotification *)notification {
     NSLog(@"onComplete");
+    _id3Metadata = nil;
     if (_loopMode == loopOne) {
         [self seek:kCMTimeZero index:@(_index) completionHandler:^(BOOL finished) {
             // XXX: Not necessary?
@@ -1069,7 +1070,6 @@
         index = [newIndex intValue];
     }
     if (index != _index) {
-        _id3Metadata = nil;
         // Jump to a new item
         /* if (_playing && index == _index + 1) { */
         /*     // Special case for jumping to the very next item */
@@ -1085,6 +1085,7 @@
             if (_playing) {
                 [_player pause];
             }
+            _id3Metadata = nil;
             [_indexedAudioSources[_index] seek:kCMTimeZero];
             // The "currentItem" key observer will respect that a seek is already in progress
             _seekPos = position;

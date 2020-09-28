@@ -197,7 +197,6 @@ public class AudioPlayer implements MethodCallHandler, Player.EventListener, Aud
 							id3Metadata.put("mimeType", frame.mimeType);
 							id3Metadata.put("pictureData", frame.pictureData);
 						}
-						Log.e(TAG, "onTracksChanged: " + entry.getClass().getName().toString() + " " + entry.toString());
 					}
 				}
 			}
@@ -721,6 +720,11 @@ public class AudioPlayer implements MethodCallHandler, Player.EventListener, Aud
 		seekResult = result;
 		seekProcessed = false;
 		int windowIndex = index != null ? index : player.getCurrentWindowIndex();
+		if (index != null) {
+			icyHeaders = null;
+			icyInfo = null;
+			id3Metadata = null;
+		}
 		player.seekTo(windowIndex, position);
 	}
 
