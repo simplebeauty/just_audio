@@ -1,3 +1,49 @@
+## 0.5.6
+
+* Fix iOS memory leak.
+* Enable useLazyPreparation by default.
+
+## 0.5.5
+
+* Add initialPosition/initialIndex parameters to load.
+* Fix iOS crash when disposing just before FlutterEngine is destroyed.
+* Fix bug with simultaneous seek requests on iOS.
+* Fix seeking when using headers (@nuc134r).
+* Fix loading state transition on Android.
+* Pass through all setSpeeds requests on iOS, ignoring canPlayFast/Slow.
+* Fix bug loading file paths containing spaces (@hsangtini).
+* Add web endorsement (@creativecreatorormaybenot).
+
+## 0.5.4
+
+* Use audio_session 0.0.9.
+
+## 0.5.3
+
+* ARC fixes on iOS.
+* Update to use platform interface 1.1.0.
+* Retain player.position after dispose.
+* Fix unnattached player bug in ConcatenatingAudioSource (@nuc134r).
+
+## 0.5.2
+
+* Fix bug in concatenating add/addAll.
+
+## 0.5.1
+
+* Fix bug in loading from assets.
+* Ignore method calls from invalid states.
+* Forward exceptions from iOS platform implementation.
+
+## 0.5.0
+
+* Convert to federated plugin.
+
+## 0.4.5
+
+* Fix iOS bug in seek/position/duration in HLS streams (@snaeji).
+* Fix web bug for audio sources with unknown durations.
+
 ## 0.4.4
 
 * Fix crash when disposing of positionStream controller.

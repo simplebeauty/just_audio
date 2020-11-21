@@ -1,22 +1,23 @@
 name: just_audio
 description: Flutter plugin to play audio from streams, files, assets, DASH/HLS streams and playlists. Works with audio_service to play audio in the background.
-version: 0.4.4
-homepage: https://github.com/ryanheise/just_audio
+version: 0.5.6
+homepage: https://github.com/ryanheise/just_audio/tree/master/just_audio
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
   flutter: ">=1.12.13+hotfix.5"
 
 dependencies:
-  audio_session: ^0.0.7
+  just_audio_platform_interface:
+    path: just_audio_platform_interface/
+#  just_audio_web: ^0.1.1
+  audio_session: ^0.0.9
   rxdart: ^0.24.1
   path: ^1.6.4
   path_provider: ^1.6.10
-  async: ^2.4.1
+  async: ^2.4.0
   uuid: ^2.2.0
   flutter:
-    sdk: flutter
-  flutter_web_plugins:
     sdk: flutter
 
 dev_dependencies:
@@ -34,5 +35,4 @@ flutter:
       macos:
         pluginClass: JustAudioPlugin
       web:
-        pluginClass: JustAudioPlugin
-        fileName: just_audio_web.dart
+        default_package: just_audio_web
