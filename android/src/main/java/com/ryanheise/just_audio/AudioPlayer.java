@@ -315,6 +315,7 @@ public class AudioPlayer implements MethodCallHandler, Player.EventListener, Aud
 		try {
 			switch (call.method) {
 			case "load":
+				id3Metadata = null;
 				load(getAudioSource(args.get(0)), result);
 				break;
 			case "play":

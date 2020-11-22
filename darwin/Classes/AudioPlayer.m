@@ -88,6 +88,7 @@
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     NSArray* args = (NSArray*)call.arguments;
     if ([@"load" isEqualToString:call.method]) {
+        _id3Metadata = nil;
         [self load:args[0] result:result];
     } else if ([@"play" isEqualToString:call.method]) {
         [self play:result];
